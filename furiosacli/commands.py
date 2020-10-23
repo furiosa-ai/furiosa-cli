@@ -1,3 +1,5 @@
+from typing import List
+
 import json
 import uuid
 
@@ -48,7 +50,7 @@ def handle_target_npu_spec(args) -> str:
     if args.target_npu_spec is not None:
         return read_config_file(args.target_npu_spec)
     else:
-        #raise CliError('--target-npu-spec is required')
+        # raise CliError('--target-npu-spec is required')
         return '{}'
 
 
@@ -84,7 +86,6 @@ class Compile(Command):
         compiler_config = handle_compiler_config(self.args)
         target_ir = handle_target_ir(self.args_map)
 
-        source = self.args_map['source']
         if 'o' in self.args and self.args_map['o'] is not None:
             output_path = self.args_map['o']
         else:
@@ -106,7 +107,7 @@ class Compile(Command):
         }
 
         logging.debug("submitting the compilation request to {}".format(request_url))
-        logging.debug("source path: {}".format(source))
+        logging.debug("source path: {}".format(source_path))
         logging.debug("output path: {}".format(output_path))
         logging.debug("target ir: {}".format(target_ir))
         logging.debug("target npu spec: \n{}\n".format(pretty_yaml(target_npu_spec)))
@@ -125,7 +126,7 @@ class Compile(Command):
                 ms_elapsed = r.elapsed.microseconds / 1000
                 self.print_message('{} has been generated (elapsed: {} ms)'.format(output_path, ms_elapsed))
         else:
-            raise ApiError('fail to compile {}'.format(source), r)
+            raise ApiError('fail to compile {}'.format(source_path), r)
 
 
 class Perf(Command):
@@ -139,7 +140,6 @@ class Perf(Command):
         target_npu_spec = handle_target_npu_spec(self.args)
         compiler_config = handle_compiler_config(self.args)
 
-        source = self.args_map['source']
         if 'o' in self.args and self.args_map['o'] is not None:
             output_path = self.args_map['o']
         else:
@@ -160,7 +160,7 @@ class Perf(Command):
         }
 
         logging.debug("submitting the perf request to {}".format(request_url))
-        logging.debug("source path: {}".format(source))
+        logging.debug("source path: {}".format(source_path))
         logging.debug("output path: {}".format(output_path))
         logging.debug("target npu spec: \n{}\n".format(pretty_yaml(target_npu_spec)))
         logging.debug("compiler config: \n{}\n".format(pretty_yaml(compiler_config)))
@@ -178,9 +178,106 @@ class Perf(Command):
                 ms_elapsed = r.elapsed.microseconds / 1000
                 self.print_message('{} has been generated (elapsed: {} ms)'.format(output_path, ms_elapsed))
         else:
-            raise ApiError('fail to estimate the performance {}'.format(source), r)
+            raise ApiError('fail to estimate the performance {}'.format(source_path), r)
 
 
 class Perfeye(Perf):
     def __init__(self, session, args, args_map):
         super().__init__(session, args, args_map, api_path='perfeye', content_type='html')
+
+
+class Calibrate(Command):
+    def __init__(self, session, args, args_map):
+        super().__init__(session, args, args_map)
+
+    def run(self) -> int:
+        source_path = self.args_map['source']
+        input_tensors = self.args_map['input_tensors']
+
+        if 'o' in self.args and self.args_map['o'] is not None:
+            output_path = self.args_map['o']
+        else:
+            output_path = 'output.html'
+
+        multi_parts = MultipartEncoder(
+            fields={
+                'input_tensors': json.dumps(input_tensors),
+                'source': (source_path, open(source_path, mode='rb'), 'application/octet-stream')
+            }
+        )
+
+        request_url = '{}/dss/calibrate'.format(self.session.api_endpoint)
+        headers = {
+            consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
+            'Content-Type': multi_parts.content_type
+        }
+
+        logging.debug("submitting the calibrate request to {}".format(request_url))
+        logging.debug("source path: {}".format(source_path))
+        logging.debug("output path: {}".format(output_path))
+        logging.debug("input tensors: \n{}\n".format(input_tensors))
+
+        r = requests.post(request_url,
+                          data=multi_parts,
+                          headers=headers,
+                          auth=ApiKeyAuth(self.session))
+
+        if r.status_code == 200:
+            with open(output_path, 'wb') as output_file:
+                content = r.content
+                output_file.write(content)
+
+                ms_elapsed = r.elapsed.microseconds / 1000
+                self.print_message('{} has been generated (elapsed: {} ms)'.format(output_path, ms_elapsed))
+        else:
+            raise ApiError('fail to estimate the performance {}'.format(source_path), r)
+
+
+class Quantize(Command):
+    def __init__(self, session, args, args_map):
+        super().__init__(session, args, args_map)
+
+    def run(self) -> int:
+        source_path = self.args_map['source']
+        input_tensors = self.args_map['input_tensors']
+        dynamic_ranges = self.args_map['dynamic_ranges']
+
+        if 'o' in self.args and self.args_map['o'] is not None:
+            output_path = self.args_map['o']
+        else:
+            output_path = 'output.onnx'
+
+        multi_parts = MultipartEncoder(
+            fields={
+                'input_tensors': json.dumps(input_tensors),
+                'dynamic_ranges': json.dumps(dynamic_ranges),
+                'source': (source_path, open(source_path, mode='rb'), 'application/octet-stream')
+            }
+        )
+
+        request_url = '{}/dss/quantize'.format(self.session.api_endpoint)
+        headers = {
+            consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
+            'Content-Type': multi_parts.content_type
+        }
+
+        logging.debug("submitting the calibrate request to {}".format(request_url))
+        logging.debug("source path: {}".format(source_path))
+        logging.debug("output path: {}".format(output_path))
+        logging.debug("input tensors: \n{}\n".format(input_tensors))
+        logging.debug("dynamic ranges: \n{}\n".format(dynamic_ranges))
+
+        r = requests.post(request_url,
+                          data=multi_parts,
+                          headers=headers,
+                          auth=ApiKeyAuth(self.session))
+
+        if r.status_code == 200:
+            with open(output_path, 'wb') as output_file:
+                content = r.content
+                output_file.write(content)
+
+                ms_elapsed = r.elapsed.microseconds / 1000
+                self.print_message('{} has been generated (elapsed: {} ms)'.format(output_path, ms_elapsed))
+        else:
+            raise ApiError('fail to estimate the performance {}'.format(source_path), r)

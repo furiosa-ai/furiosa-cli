@@ -51,6 +51,10 @@ class CLIDriver(object):
             cmd = commands.Compile(self.session, self.args, self.args_map)
         elif self.args.command == 'perfeye':
             cmd = commands.Perfeye(self.session, self.args, self.args_map)
+        elif self.args.command == 'calibrate':
+            cmd = commands.Calibrate(self.session, self.args, self.args_map)
+        elif self.args.command == 'quantize':
+            cmd = commands.Quantize(self.session, self.args, self.args_map)
         elif self.args.command == 'version':
             cmd = commands.Version(self.session, self.args, self.args_map)
         else:
