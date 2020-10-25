@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict, Tuple
 
 import json
 import uuid
@@ -186,9 +186,42 @@ class Perfeye(Perf):
         super().__init__(session, args, args_map, api_path='perfeye', content_type='html')
 
 
-class Calibrate(Command):
+class BuildCalibrationModel(Command):
     def __init__(self, session, args, args_map):
         super().__init__(session, args, args_map)
+
+    @staticmethod
+    def build_calibration_model(session,
+                                model: bytes,
+                                input_tensors: List[str],
+                                model_path: str = None) -> bytes:
+        model_path = model_path or 'model.onnx'
+        multi_parts = MultipartEncoder(
+            fields={
+                'input_tensors': json.dumps(input_tensors),
+                'source': (model_path, model, 'application/octet-stream')
+            }
+        )
+
+        request_url = '{}/dss/build-calibration-model'.format(session.api_endpoint)
+        headers = {
+            consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
+            'Content-Type': multi_parts.content_type
+        }
+
+        logging.debug("submitting the build calibration model request to {}".format(request_url))
+        logging.debug("source path: {}".format(model_path))
+        logging.debug("input tensors: \n{}\n".format(input_tensors))
+
+        r = requests.post(request_url,
+                          data=multi_parts,
+                          headers=headers,
+                          auth=ApiKeyAuth(session))
+
+        if r.status_code == 200:
+            return r.content
+        else:
+            raise ApiError('fail to build calibration model {}'.format(model_path), r)
 
     def run(self) -> int:
         source_path = self.args_map['source']
@@ -197,45 +230,56 @@ class Calibrate(Command):
         if 'o' in self.args and self.args_map['o'] is not None:
             output_path = self.args_map['o']
         else:
-            output_path = 'output.html'
+            output_path = 'output.onnx'
 
-        multi_parts = MultipartEncoder(
-            fields={
-                'input_tensors': json.dumps(input_tensors),
-                'source': (source_path, open(source_path, mode='rb'), 'application/octet-stream')
-            }
-        )
-
-        request_url = '{}/dss/calibrate'.format(self.session.api_endpoint)
-        headers = {
-            consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
-            'Content-Type': multi_parts.content_type
-        }
-
-        logging.debug("submitting the calibrate request to {}".format(request_url))
-        logging.debug("source path: {}".format(source_path))
-        logging.debug("output path: {}".format(output_path))
-        logging.debug("input tensors: \n{}\n".format(input_tensors))
-
-        r = requests.post(request_url,
-                          data=multi_parts,
-                          headers=headers,
-                          auth=ApiKeyAuth(self.session))
-
-        if r.status_code == 200:
-            with open(output_path, 'wb') as output_file:
-                content = r.content
-                output_file.write(content)
-
-                ms_elapsed = r.elapsed.microseconds / 1000
-                self.print_message('{} has been generated (elapsed: {} ms)'.format(output_path, ms_elapsed))
-        else:
-            raise ApiError('fail to estimate the performance {}'.format(source_path), r)
+        with open(source_path, 'rb') as model, \
+                open(output_path, 'wb') as output_file:
+            model = BuildCalibrationModel.build_calibration_model(self.session,
+                                                                  model.read(),
+                                                                  input_tensors,
+                                                                  model_path=source_path)
+            output_file.write(model)
 
 
 class Quantize(Command):
     def __init__(self, session, args, args_map):
         super().__init__(session, args, args_map)
+
+    @staticmethod
+    def quantize(session,
+                 model: bytes,
+                 input_tensors: List[str],
+                 dynamic_ranges: Dict[str, Tuple[float, float]],
+                 model_path: str = None) -> bytes:
+        model_path = model_path or 'model.onnx'
+        multi_parts = MultipartEncoder(
+            fields={
+                'input_tensors': json.dumps(input_tensors),
+                'dynamic_ranges': json.dumps(dynamic_ranges),
+                'source': (model_path, model, 'application/octet-stream')
+            }
+        )
+
+        request_url = '{}/dss/quantize'.format(session.api_endpoint)
+        headers = {
+            consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
+            'Content-Type': multi_parts.content_type
+        }
+
+        logging.debug("submitting the quantize request to {}".format(request_url))
+        logging.debug("source path: {}".format(model_path or 'model.onnx'))
+        logging.debug("input tensors: \n{}\n".format(input_tensors))
+        logging.debug("dynamic ranges: \n{}\n".format(dynamic_ranges))
+
+        r = requests.post(request_url,
+                          data=multi_parts,
+                          headers=headers,
+                          auth=ApiKeyAuth(session))
+
+        if r.status_code == 200:
+            return r.content
+        else:
+            raise ApiError('fail to quantize th model {}'.format(model_path), r)
 
     def run(self) -> int:
         source_path = self.args_map['source']
@@ -247,37 +291,13 @@ class Quantize(Command):
         else:
             output_path = 'output.onnx'
 
-        multi_parts = MultipartEncoder(
-            fields={
-                'input_tensors': json.dumps(input_tensors),
-                'dynamic_ranges': json.dumps(dynamic_ranges),
-                'source': (source_path, open(source_path, mode='rb'), 'application/octet-stream')
-            }
-        )
-
-        request_url = '{}/dss/quantize'.format(self.session.api_endpoint)
-        headers = {
-            consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
-            'Content-Type': multi_parts.content_type
-        }
-
-        logging.debug("submitting the calibrate request to {}".format(request_url))
-        logging.debug("source path: {}".format(source_path))
-        logging.debug("output path: {}".format(output_path))
-        logging.debug("input tensors: \n{}\n".format(input_tensors))
-        logging.debug("dynamic ranges: \n{}\n".format(dynamic_ranges))
-
-        r = requests.post(request_url,
-                          data=multi_parts,
-                          headers=headers,
-                          auth=ApiKeyAuth(self.session))
-
-        if r.status_code == 200:
-            with open(output_path, 'wb') as output_file:
-                content = r.content
-                output_file.write(content)
-
-                ms_elapsed = r.elapsed.microseconds / 1000
-                self.print_message('{} has been generated (elapsed: {} ms)'.format(output_path, ms_elapsed))
-        else:
-            raise ApiError('fail to estimate the performance {}'.format(source_path), r)
+        with open(source_path, 'rb') as model, \
+                open(dynamic_ranges, 'r') as dynamic_ranges, \
+                open(output_path, 'wb') as output_file:
+            dynamic_ranges = json.load(dynamic_ranges)
+            model = Quantize.quantize(self.session,
+                                      model.read(),
+                                      input_tensors,
+                                      dynamic_ranges,
+                                      model_path=source_path)
+            output_file.write(model)

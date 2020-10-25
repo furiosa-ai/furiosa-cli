@@ -1,5 +1,4 @@
 import argparse
-import json
 
 
 def create_argparser():
@@ -31,12 +30,12 @@ def create_argparser():
                                         help='Generate a visialized view of the static performance estimation')
     add_perf_opts(perfeye_cmd, 'html')
 
-    calibrate_cmd = subparsers.add_parser("calibrate", help='calibrate help')
-    calibrate_cmd.add_argument('source', type=str,
+    build_calibration_model_cmd = subparsers.add_parser("build_calibration_model", help='build calibration model help')
+    build_calibration_model_cmd.add_argument('source', type=str,
                                help='Path to onnx file')
-    calibrate_cmd.add_argument('-o', type=str, default='output.onnx',
+    build_calibration_model_cmd.add_argument('-o', type=str, default='output.onnx',
                                help='Path to Output file (default: output.onnx)')
-    calibrate_cmd.add_argument('--input-tensors', type=str, nargs='+',
+    build_calibration_model_cmd.add_argument('--input-tensors', type=str, nargs='+',
                                help='name of input tensors')
 
     quantize_cmd = subparsers.add_parser("quantize", help='quantize help')
@@ -46,8 +45,8 @@ def create_argparser():
                               help='Path to Output file (default: output.onnx)')
     quantize_cmd.add_argument('--input-tensors', type=str, nargs='+',
                               help='name of input tensors')
-    quantize_cmd.add_argument('--dynamic-ranges', type=json.loads,
-                              help='serialized (json) data of the dynamic ranges')
+    quantize_cmd.add_argument('--dynamic-ranges', type=str,
+                              help='path of the dynamic ranges')
     return parser
 
 
