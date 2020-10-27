@@ -114,3 +114,8 @@ To see the estimated performance, please run `perfeye` command as following with
 $ furiosa perfeye test_data/MNISTnet_uint8_quant_without_softmax.tflite -o output.html
 output.html has been generated (elapsed: 510.783 ms)
 ```
+
+
+## Allocation Result 
+
+![Allocation Result](images/allocation_result.png)

@@ -210,6 +210,52 @@ class Perfeye(Perf):
         super().__init__(session, args, args_map, api_path='perfeye', content_type='html')
 
 
+class Optimize(Command):
+    def __init__(self, session, args, args_map):
+        super().__init__(session, args, args_map)
+
+    @staticmethod
+    def optimize(session, model: bytes, model_path: str = None) -> bytes:
+        model_path = model_path or 'model.onnx'
+        multi_parts = MultipartEncoder(
+            fields={
+                'source': (model_path, model, 'application/octet-stream')
+            }
+        )
+
+        request_url = '{}/dss/optimize'.format(session.api_endpoint)
+        headers = {
+            consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
+            'Content-Type': multi_parts.content_type
+        }
+
+        logging.debug("submitting the build calibration model request to {}".format(request_url))
+        logging.debug("source path: {}".format(model_path))
+
+        r = requests.post(request_url,
+                          data=multi_parts,
+                          headers=headers,
+                          auth=ApiKeyAuth(session))
+
+        if r.status_code == 200:
+            return r.content
+        else:
+            raise ApiError('fail to build calibration model {}'.format(model_path), r)
+
+    def run(self) -> int:
+        source_path = self.args_map['source']
+
+        if 'o' in self.args and self.args_map['o'] is not None:
+            output_path = self.args_map['o']
+        else:
+            output_path = 'output.onnx'
+
+        with open(source_path, 'rb') as model, \
+                open(output_path, 'wb') as output_file:
+            model = Optimize.optimize(self.session, model.read(), model_path=source_path)
+            output_file.write(model)
+
+
 class BuildCalibrationModel(Command):
     def __init__(self, session, args, args_map):
         super().__init__(session, args, args_map)
