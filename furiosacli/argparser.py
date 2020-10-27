@@ -30,15 +30,16 @@ def create_argparser():
                                         help='Generate a visialized view of the static performance estimation')
     add_perf_opts(perfeye_cmd, 'html')
 
-    build_calibration_model_cmd = subparsers.add_parser("build_calibration_model", help='build calibration model help')
+    build_calibration_model_cmd = subparsers.add_parser("build_calibration_model",
+                                                        help='Build a model to a calibration model.')
     build_calibration_model_cmd.add_argument('source', type=str,
-                               help='Path to onnx file')
+                                             help='Path to onnx file')
     build_calibration_model_cmd.add_argument('-o', type=str, default='output.onnx',
-                               help='Path to Output file (default: output.onnx)')
+                                             help='Path to Output file (default: output.onnx)')
     build_calibration_model_cmd.add_argument('--input-tensors', type=str, nargs='+',
-                               help='name of input tensors')
+                                             help='name of input tensors')
 
-    quantize_cmd = subparsers.add_parser("quantize", help='quantize help')
+    quantize_cmd = subparsers.add_parser("quantize", help='Transform a model to a quantized model.')
     quantize_cmd.add_argument('source', type=str,
                               help='Path to onnx file')
     quantize_cmd.add_argument('-o', type=str, default='output.onnx',
