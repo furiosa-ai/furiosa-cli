@@ -2,6 +2,7 @@ from typing import List, Dict, Tuple
 
 import json
 import uuid
+import base64
 
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
@@ -96,14 +97,17 @@ class Compile(Command):
                 'target_npu_spec': target_npu_spec,
                 'compiler_config': compiler_config,
                 'target_ir': target_ir,
-                'source': (source_path, open(source_path, mode='rb'), 'application/octet-stream')
+                'source': (source_path, open(source_path, mode='rb'), 'application/octet-stream'),
+                'compiler_report': 'true' if self.args.compiler_report is not None else 'false',
+                'mem_alloc_report': 'true' if self.args.mem_alloc_report is not None else 'false',
             }
         )
 
         request_url = '{}/compiler'.format(self.session.api_endpoint)
         headers = {
             consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
-            'Content-Type': multi_parts.content_type
+            'Content-Type': multi_parts.content_type,
+            consts.FURIOSA_API_VERSION_HEADER: str(2) # version 2
         }
 
         logging.debug("submitting the compilation request to {}".format(request_url))
@@ -119,12 +123,32 @@ class Compile(Command):
                           auth=ApiKeyAuth(self.session))
 
         if r.status_code == 200:
+            content = r.json()
             with open(output_path, 'wb') as output_file:
-                content = r.content
-                output_file.write(content)
+                binary = content['binary']
+                decoded_binary = base64.decodebytes(bytes(binary, 'utf-8'))
+                output_file.write(decoded_binary)
 
                 ms_elapsed = r.elapsed.microseconds / 1000
                 self.print_message('{} has been generated (elapsed: {} ms)'.format(output_path, ms_elapsed))
+
+            if self.args.compiler_report is not None:
+                compiler_report_path = self.args.compiler_report
+                with open(compiler_report_path, 'w') as compiler_report_file:
+                    compiler_report = content['compiler_report']
+                    decoded_compiler_report = base64.standard_b64decode(compiler_report)
+                    compiler_report_file.write(bytes.decode(decoded_compiler_report))
+                    self.print_message('the compiler report has been written to {}'
+                                       .format(compiler_report_path))
+
+            if self.args.mem_alloc_report is not None:
+                mem_alloc_report_path = self.args.mem_alloc_report
+                with open(self.args.mem_alloc_report, 'w') as mem_alloc_report_file:
+                    mem_alloc_report = content['mem_alloc_report']
+                    decoded_mem_alloc_report = base64.standard_b64decode(mem_alloc_report)
+                    mem_alloc_report_file.write(bytes.decode(decoded_mem_alloc_report))
+                    self.print_message('the memory allocation report has been written to {}'
+                                       .format(mem_alloc_report_path))
         else:
             raise ApiError('fail to compile {}'.format(source_path), r)
 

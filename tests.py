@@ -1,3 +1,4 @@
+import os
 import subprocess
 import unittest
 
@@ -77,6 +78,32 @@ class ParserTest(unittest.TestCase):
                                 capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn('/tmp/test.lir has been generated', str(result.stdout))
+
+    def test_compile_with_reports(self):
+        import uuid
+
+        compiler_report_file = '/tmp/{}.txt'.format(uuid.uuid4())
+        mem_alloc_report_file = '/tmp/{}.html'.format(uuid.uuid4())
+
+        result = subprocess.run(['furiosa',
+                                 '-d',
+                                 '-v',
+                                 'compile',
+                                 self.source,
+                                 '--config', self.compiler_config,
+                                 '--compiler-report', compiler_report_file,
+                                 '--mem-alloc-report', mem_alloc_report_file,
+                                 '-o', '/tmp/test.lir'
+                                 ],
+                                capture_output=True)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn('/tmp/test.lir has been generated', str(result.stdout))
+        self.assertTrue(os.path.isfile(compiler_report_file))
+        self.assertTrue(os.path.isfile(mem_alloc_report_file))
+
+        os.remove(compiler_report_file)
+        os.remove(mem_alloc_report_file)
+
 
     def test_compile_with_invalid_config(self):
         result = subprocess.run(['furiosa',

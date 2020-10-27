@@ -38,52 +38,79 @@ FURIOSA_ACCESS_KEY_ID=XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 FURIOSA_SECRET_ACCESS_KEY=YYYYYYYYYYYYYYYYYYYYYYYYYY
 ```
 
+## Command usages
+To see more options, please run 'furiosa --help' as follow:
+```
+furiosa
+ERROR: Need command
+
+usage: furiosa [-h] [-q] [-d] [-v]
+               {version,compile,perfeye,build_calibration_model,quantize} ...
+
+Furiosa AI Web Service CLI
+
+positional arguments:
+  {version,compile,perfeye,build_calibration_model,quantize}
+    version             Print out the version
+    compile             Compile your model and generate a binary for Furiosa
+                        NPU
+    perfeye             Generate a visialized view of the static performance
+                        estimation
+    build_calibration_model
+                        build calibration model help
+    quantize            quantize help
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -q, --quiet           Quiet mode, CLI will not print out any message
+  -d, --debug           Dnable debug mode
+  -v, --verbose         increase output verbosity
+```
+
+To see options of each command, please run as follow:
+```
+furiosa <command> --help
+```
+
 ## Examples of command lines:
-Compiling a tflite model
+### Compiling tflite models
+
+`compile` command will compile your tflite model and generate an ENF file, 
+which is the binary format executable in Furiosa's NPUs.
 ```sh
 $ furiosa compile test_data/MNISTnet_uint8_quant_without_softmax.tflite
 output.enf has been generated (elapsed: 513.661 ms)
 ```
 
-Compiling a tflite model with a specific output path
+You can specify the output path of the compiled binary.
 ```sh
 $ furiosa compile test_data/MNISTnet_uint8_quant_without_softmax.tflite -o /tmp/mnist.enf 
 mnist.enf has been generated (elapsed: 513.661 ms)
 ```
 
-Compiling a tflite model with a compiler config
+You can also specify a compiler config. 
 ```sh
 $ furiosa compile test_data/MNISTnet_uint8_quant_without_softmax.tflite --config test_data/compiler_config.yml 
 outout.enf has been generated (elapsed: 513.661 ms)
 ```
 
-Estimating a performance of your model
+The compiler also provides a couple of reports to 
+allow users to take a look at how it works in more details.
+
+*Compiler report*
+```
+$ furiosa compile test_data/MNISTnet_uint8_quant_without_softmax.tflite -o /tmp/mnist.enf --compiler-report ./compiler-report.txt
+```
+
+*Memory allocation report*
+```
+$ furiosa compile test_data/MNISTnet_uint8_quant_without_softmax.tflite -o /tmp/mnist.enf --mem-alloc-report ./mem-report.html
+```
+
+### Estimating a performance of your model
+
+To see the estimated performance, please run `perfeye` command as following with your model image as follow:
 ```sh
 $ furiosa perfeye test_data/MNISTnet_uint8_quant_without_softmax.tflite -o output.html
 output.html has been generated (elapsed: 510.783 ms)
-```
-
-To see more options, please run 'furiosa --help' as follow:
-```
-furiosa --help
-usage: furiosa [-h] [-q] [-d] [-v] {compile,perfeye} ...
-
-Furiosa AI Web Service CLI
-
-positional arguments:
-  {compile,perfeye}
-    compile          compile help
-    perfeye          perfeye help
-
-optional arguments:
-  -h, --help         show this help message and exit
-  -q, --quiet        Quiet mode, CLI will not print out any message
-  -d, --debug        Dnable debug mode
-  -v, --verbose      increase output verbosity
-```
-
-To see options of each command, please run as follow:
-
-```
-furiosa <command> --help
 ```

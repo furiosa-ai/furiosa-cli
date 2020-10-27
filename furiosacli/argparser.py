@@ -25,6 +25,10 @@ def create_argparser():
                              help='Path to Compiler Config file (yaml)')
     compile_cmd.add_argument('--target-npu-spec', type=str,
                              help='Path to Target NPU Specification (yaml)')
+    compile_cmd.add_argument('--compiler-report', type=str,
+                             help='Path to the compiler report')
+    compile_cmd.add_argument('--mem-alloc-report', type=str,
+                             help='Path to the memory allocation report')
 
     perfeye_cmd = subparsers.add_parser("perfeye",
                                         help='Generate a visialized view of the static performance estimation')
