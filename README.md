@@ -87,3 +87,8 @@ To see options of each command, please run as follow:
 ```
 furiosa <command> --help
 ```
+
+
+## Allocation Result 
+
+![Allocation Result](images/allocation_result.png)
