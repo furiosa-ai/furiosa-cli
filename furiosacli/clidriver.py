@@ -51,6 +51,8 @@ class CLIDriver(object):
             cmd = commands.Compile(self.session, self.args, self.args_map)
         elif self.args.command == 'perfeye':
             cmd = commands.Perfeye(self.session, self.args, self.args_map)
+        elif self.args.command == 'optimize':
+            cmd = commands.Optimize(self.session, self.args, self.args_map)
         elif self.args.command == 'build_calibration_model':
             cmd = commands.BuildCalibrationModel(self.session, self.args, self.args_map)
         elif self.args.command == 'quantize':

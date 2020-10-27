@@ -30,6 +30,13 @@ def create_argparser():
                                         help='Generate a visialized view of the static performance estimation')
     add_perf_opts(perfeye_cmd, 'html')
 
+    optimize_cmd = subparsers.add_parser("optimize",
+                                         help='Optimize a model to calibrate & quantize.')
+    optimize_cmd.add_argument('source', type=str,
+                              help='Path to onnx file')
+    optimize_cmd.add_argument('-o', type=str, default='output.onnx',
+                              help='Path to Output file (default: output.onnx)')
+
     build_calibration_model_cmd = subparsers.add_parser("build_calibration_model",
                                                         help='Build a model to a calibration model.')
     build_calibration_model_cmd.add_argument('source', type=str,
