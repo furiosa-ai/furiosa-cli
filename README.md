@@ -107,6 +107,10 @@ $ furiosa compile test_data/MNISTnet_uint8_quant_without_softmax.tflite -o /tmp/
 $ furiosa compile test_data/MNISTnet_uint8_quant_without_softmax.tflite -o /tmp/mnist.enf --mem-alloc-report ./mem-report.html
 ```
 
+This command will generate './mem-report.html' file which contains the memory allocation graph as the following:
+
+![An example of the memory allocation graph](images/allocation_result.png)
+
 ### Estimating a performance of your model
 
 To see the estimated performance, please run `perfeye` command as following with your model image as follow:
@@ -114,8 +118,3 @@ To see the estimated performance, please run `perfeye` command as following with
 $ furiosa perfeye test_data/MNISTnet_uint8_quant_without_softmax.tflite -o output.html
 output.html has been generated (elapsed: 510.783 ms)
 ```
-
-
-## Allocation Result 
-
-![Allocation Result](images/allocation_result.png)
