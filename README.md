@@ -110,7 +110,7 @@ $ furiosa compile test_data/MNISTnet_uint8_quant_without_softmax.tflite -o /tmp/
 $ furiosa compile test_data/MNISTnet_uint8_quant_without_softmax.tflite -o /tmp/mnist.enf --mem-alloc-report ./mem-report.html
 ```
 
-This command will generate './mem-report.html' file which contains the memory allocation graph as the following:
+This command will generate './mem-report.html' file containing how optimal the memory allocation is. The following figure is an example of the memory allocation report.
 
 ![An example of the memory allocation graph](images/allocation_result.png)
 
