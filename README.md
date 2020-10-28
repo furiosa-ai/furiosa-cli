@@ -94,15 +94,18 @@ $ furiosa compile test_data/MNISTnet_uint8_quant_without_softmax.tflite --config
 outout.enf has been generated (elapsed: 513.661 ms)
 ```
 
-The compiler also provides a couple of reports to 
-allow users to take a look at how it works in more details.
+### Generating reports from compiler
+
+The compiler also provides the reports to allow users to look into how the compiler works in more details.
 
 *Compiler report*
+
 ```
 $ furiosa compile test_data/MNISTnet_uint8_quant_without_softmax.tflite -o /tmp/mnist.enf --compiler-report ./compiler-report.txt
 ```
 
 *Memory allocation report*
+
 ```
 $ furiosa compile test_data/MNISTnet_uint8_quant_without_softmax.tflite -o /tmp/mnist.enf --mem-alloc-report ./mem-report.html
 ```
