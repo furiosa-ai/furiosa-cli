@@ -22,3 +22,9 @@ class ApiError(CliError):
             error_message = response.text
             super().__init__('{} (http_status: {}, message: {})'
                              .format(message, http_status, error_message), 4)
+
+    def __str__(self):
+        return "(exit code: {}, message: {})".format(self.exit_code, self.message)
+
+    def __repr__(self):
+        return "ApiError(exit code: {}, message: {})".format(self.exit_code, self.message)
