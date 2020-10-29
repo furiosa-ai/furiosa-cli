@@ -12,8 +12,13 @@ class NoCommandException(CliError):
 class ApiError(CliError):
     def __init__(self, message, response):
         http_status = response.status_code
-        body = response.json()
-        error_code = body['error_code']
-        error_message = body['message']
-        super().__init__('{} (http_status: {}, error_code: {}, message: {})'
-                         .format(message, http_status, error_code, error_message), 4)
+        try:
+            body = response.json()
+            error_code = body['error_code']
+            error_message = body['message']
+            super().__init__('{} (http_status: {}, error_code: {}, message: {})'
+                             .format(message, http_status, error_code, error_message), 4)
+        except:
+            error_message = response.text
+            super().__init__('{} (http_status: {}, message: {})'
+                             .format(message, http_status, error_message), 4)
