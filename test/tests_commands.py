@@ -1,15 +1,19 @@
 import os
 import subprocess
 import unittest
+import uuid
 
 from furiosacli import argparser
+from test import test_data
 
 
 class ParserTest(unittest.TestCase):
-    source = 'test_data/MNISTnet_uint8_quant_without_softmax.tflite';
-    #target_npu_spec = 'test_data/128dpes.yml'
-    compiler_config = 'test_data/compiler_config.yml'
-    invalid_compiler_config = 'test_data/invalid_compiler_config.yml'
+    mnist_model = test_data('MNISTnet_uint8_quant_without_softmax.tflite')
+    test_onnx_model = test_data('test.onnx')
+    test_dynamic_ranges = test_data('test_dynamic_ranges.json')
+
+    compiler_config = test_data('compiler_config.yml')
+    invalid_compiler_config = test_data('invalid_compiler_config.yml')
 
     def setUp(self):
         self.parser = argparser.create_argparser()
@@ -22,7 +26,7 @@ class ParserTest(unittest.TestCase):
         result = subprocess.run(['furiosa',
                                  '-d',
                                  '-v',
-                                 'compile', self.source,
+                                 'compile', self.mnist_model,
                                 ], capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn('output.enf has been generated', str(result.stdout))
@@ -31,7 +35,7 @@ class ParserTest(unittest.TestCase):
         result = subprocess.run(['furiosa',
                                  '-d',
                                  '-v',
-                                 'compile', self.source,
+                                 'compile', self.mnist_model,
                                  #'--target-npu-spec', self.target_npu_spec
                                 ], capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
@@ -42,7 +46,7 @@ class ParserTest(unittest.TestCase):
                                  '-d',
                                  '-v',
                                  'compile',
-                                 self.source,
+                                 self.mnist_model,
                                  #'--target-npu-spec', self.target_npu_spec,
                                  '--config', self.compiler_config
                                  ],
@@ -55,7 +59,7 @@ class ParserTest(unittest.TestCase):
                                  '-d',
                                  '-v',
                                  'compile',
-                                 self.source,
+                                 self.mnist_model,
                                  #'--target-npu-spec', self.target_npu_spec,
                                  '--config', self.compiler_config,
                                  '--target-ir', 'lir'
@@ -69,7 +73,7 @@ class ParserTest(unittest.TestCase):
                                  '-d',
                                  '-v',
                                  'compile',
-                                 self.source,
+                                 self.mnist_model,
                                  #'--target-npu-spec', self.target_npu_spec,
                                  '--config', self.compiler_config,
                                  '--target-ir', 'lir',
@@ -89,7 +93,7 @@ class ParserTest(unittest.TestCase):
                                  '-d',
                                  '-v',
                                  'compile',
-                                 self.source,
+                                 self.mnist_model,
                                  '--config', self.compiler_config,
                                  '--compiler-report', compiler_report_file,
                                  '--mem-alloc-report', mem_alloc_report_file,
@@ -107,22 +111,22 @@ class ParserTest(unittest.TestCase):
 
     def test_compile_with_invalid_config(self):
         result = subprocess.run(['furiosa',
-                                 '-d',
                                  'compile',
-                                 self.source,
+                                 self.mnist_model,
                                  #'--target-npu-spec', self.target_npu_spec,
                                  '--config', self.invalid_compiler_config,
                                  ],
                                 capture_output=True)
         self.assertEqual(4, result.returncode)
-        self.assertIn('ERROR: fail to compile test_data/MNISTnet_uint8_quant_without_softmax.tflite (http_status: 501',
-                      str(result.stderr))
+        self.assertIn('ERROR: fail to compile', str(result.stderr))
+        self.assertIn('test_data/MNISTnet_uint8_quant_without_softmax.tflite (http_status: 501, error_code: CompilationFailed, message: Currently, our compiler is not able to compile this model)',
+                     str(result.stderr))
 
     def test_perfeye(self):
         result = subprocess.run(['furiosa',
                                  '-v',
                                  'perfeye',
-                                 self.source,
+                                 self.mnist_model,
                                  '--config', self.compiler_config,
                                  '-o', '/tmp/test.html',
                                  ],
@@ -134,7 +138,7 @@ class ParserTest(unittest.TestCase):
         result = subprocess.run(['furiosa',
                                  '-v',
                                  'perfeye',
-                                 self.source,
+                                 self.mnist_model,
                                  '--config', self.compiler_config,
                                  '-o', '/tmp/test.html',
                                  ],
@@ -146,7 +150,7 @@ class ParserTest(unittest.TestCase):
         result = subprocess.run(['furiosa',
                                  '-v',
                                  'perfeye',
-                                 self.source,
+                                 self.mnist_model,
                                  #'--target-npu-spec', self.target_npu_spec,
                                  '--config', self.compiler_config,
                                  '-o', '/tmp/test.html',
@@ -154,3 +158,45 @@ class ParserTest(unittest.TestCase):
                                 capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn('/tmp/test.html has been generated', str(result.stdout))
+
+    def test_optimize(self):
+        output_path = '/tmp/{}.onnx'.format(uuid.uuid4())
+        result = subprocess.run(['furiosa',
+                                 '-v',
+                                 'optimize',
+                                 self.test_onnx_model,
+                                 '-o', output_path,
+                                 ],
+                                capture_output=True)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertTrue(os.path.isfile(output_path))
+        os.remove(output_path)
+
+    def test_quantize(self):
+        output_path = '/tmp/{}.onnx'.format(uuid.uuid4())
+        result = subprocess.run(['furiosa',
+                                 '-v',
+                                 'quantize',
+                                 self.test_onnx_model,
+                                 '--input-tensors', 'input',
+                                 '--dynamic-ranges', self.test_dynamic_ranges,
+                                 '-o', output_path,
+                                 ],
+                                capture_output=True)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertTrue(os.path.isfile(output_path))
+        os.remove(output_path)
+
+    def test_build_calibration_model(self):
+        output_path = '/tmp/{}.onnx'.format(uuid.uuid4())
+        result = subprocess.run(['furiosa',
+                                 '-v',
+                                 'build_calibration_model',
+                                 self.test_onnx_model,
+                                 '--input-tensors', 'input',
+                                 '-o', output_path,
+                                 ],
+                                capture_output=True)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertTrue(os.path.isfile(output_path))
+        os.remove(output_path)
