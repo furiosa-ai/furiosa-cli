@@ -18,6 +18,10 @@ class ParserTest(unittest.TestCase):
     def setUp(self):
         self.parser = argparser.create_argparser()
 
+    def assert_file_created(self, path):
+        self.assertTrue(os.path.isfile(path))
+        os.remove(path)
+
     def test_no_command(self):
         result = subprocess.run(['furiosa'], capture_output=True)
         self.assertIn('ERROR: Need command', str(result.stderr))
@@ -36,7 +40,6 @@ class ParserTest(unittest.TestCase):
                                  '-d',
                                  '-v',
                                  'compile', self.mnist_model,
-                                 #'--target-npu-spec', self.target_npu_spec
                                 ], capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn('output.enf has been generated', str(result.stdout))
@@ -47,7 +50,6 @@ class ParserTest(unittest.TestCase):
                                  '-v',
                                  'compile',
                                  self.mnist_model,
-                                 #'--target-npu-spec', self.target_npu_spec,
                                  '--config', self.compiler_config
                                  ],
                                 capture_output=True)
@@ -60,7 +62,6 @@ class ParserTest(unittest.TestCase):
                                  '-v',
                                  'compile',
                                  self.mnist_model,
-                                 #'--target-npu-spec', self.target_npu_spec,
                                  '--config', self.compiler_config,
                                  '--target-ir', 'lir'
                                  ],
@@ -69,23 +70,25 @@ class ParserTest(unittest.TestCase):
         self.assertIn('output.lir has been generated', str(result.stdout))
 
     def test_compile_with_specific_output(self):
+        output_path = '/tmp/{}.lir'.format(uuid.uuid4())
         result = subprocess.run(['furiosa',
                                  '-d',
                                  '-v',
                                  'compile',
                                  self.mnist_model,
-                                 #'--target-npu-spec', self.target_npu_spec,
                                  '--config', self.compiler_config,
                                  '--target-ir', 'lir',
-                                 '-o', '/tmp/test.lir',
+                                 '-o', output_path,
                                  ],
                                 capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertIn('/tmp/test.lir has been generated', str(result.stdout))
+        self.assertIn('{} has been generated'.format(output_path), str(result.stdout))
+        self.assert_file_created(output_path)
 
     def test_compile_with_reports(self):
         import uuid
 
+        output_path = '/tmp/{}.lir'.format(uuid.uuid4())
         compiler_report_file = '/tmp/{}.txt'.format(uuid.uuid4())
         mem_alloc_report_file = '/tmp/{}.html'.format(uuid.uuid4())
 
@@ -97,23 +100,20 @@ class ParserTest(unittest.TestCase):
                                  '--config', self.compiler_config,
                                  '--compiler-report', compiler_report_file,
                                  '--mem-alloc-report', mem_alloc_report_file,
-                                 '-o', '/tmp/test.lir'
+                                 '-o', output_path
                                  ],
                                 capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertIn('/tmp/test.lir has been generated', str(result.stdout))
-        self.assertTrue(os.path.isfile(compiler_report_file))
-        self.assertTrue(os.path.isfile(mem_alloc_report_file))
+        self.assertIn('{} has been generated'.format(output_path), str(result.stdout))
 
-        os.remove(compiler_report_file)
-        os.remove(mem_alloc_report_file)
-
+        self.assert_file_created(output_path)
+        self.assert_file_created(compiler_report_file)
+        self.assert_file_created(mem_alloc_report_file)
 
     def test_compile_with_invalid_config(self):
         result = subprocess.run(['furiosa',
                                  'compile',
                                  self.mnist_model,
-                                 #'--target-npu-spec', self.target_npu_spec,
                                  '--config', self.invalid_compiler_config,
                                  ],
                                 capture_output=True)
@@ -123,41 +123,47 @@ class ParserTest(unittest.TestCase):
                      str(result.stderr))
 
     def test_perfeye(self):
+        output_path = '/tmp/{}.html'.format(uuid.uuid4())
         result = subprocess.run(['furiosa',
                                  '-v',
                                  'perfeye',
                                  self.mnist_model,
                                  '--config', self.compiler_config,
-                                 '-o', '/tmp/test.html',
+                                 '-o', output_path,
                                  ],
                                 capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertIn('/tmp/test.html has been generated', str(result.stdout))
+        self.assertIn('{} has been generated'.format(output_path), str(result.stdout))
+        self.assert_file_created(output_path)
 
     def test_perfeye_with_compiler_config(self):
+        output_path = '/tmp/{}.html'.format(uuid.uuid4())
         result = subprocess.run(['furiosa',
                                  '-v',
                                  'perfeye',
                                  self.mnist_model,
                                  '--config', self.compiler_config,
-                                 '-o', '/tmp/test.html',
+                                 '-o', output_path,
                                  ],
                                 capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertIn('/tmp/test.html has been generated', str(result.stdout))
+        self.assertIn('{} has been generated'.format(output_path), str(result.stdout))
+        self.assert_file_created(output_path)
 
     def test_perfeye_with_target_npu_spec(self):
+        output_path = '/tmp/{}.html'.format(uuid.uuid4())
         result = subprocess.run(['furiosa',
                                  '-v',
                                  'perfeye',
                                  self.mnist_model,
                                  #'--target-npu-spec', self.target_npu_spec,
                                  '--config', self.compiler_config,
-                                 '-o', '/tmp/test.html',
+                                 '-o', output_path,
                                  ],
                                 capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertIn('/tmp/test.html has been generated', str(result.stdout))
+        self.assertIn('{} has been generated'.format(output_path), str(result.stdout))
+        self.assert_file_created(output_path)
 
     def test_optimize(self):
         output_path = '/tmp/{}.onnx'.format(uuid.uuid4())
@@ -169,8 +175,7 @@ class ParserTest(unittest.TestCase):
                                  ],
                                 capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertTrue(os.path.isfile(output_path))
-        os.remove(output_path)
+        self.assert_file_created(output_path)
 
     def test_quantize(self):
         output_path = '/tmp/{}.onnx'.format(uuid.uuid4())
@@ -184,8 +189,7 @@ class ParserTest(unittest.TestCase):
                                  ],
                                 capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertTrue(os.path.isfile(output_path))
-        os.remove(output_path)
+        self.assert_file_created(output_path)
 
     def test_build_calibration_model(self):
         output_path = '/tmp/{}.onnx'.format(uuid.uuid4())
@@ -198,5 +202,4 @@ class ParserTest(unittest.TestCase):
                                  ],
                                 capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertTrue(os.path.isfile(output_path))
-        os.remove(output_path)
+        self.assert_file_created(output_path)

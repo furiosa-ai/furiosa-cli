@@ -7,4 +7,6 @@ test:
 clean:
 	rm -rf build dist furiosacli.egg-info
 
+.PHONY: all test clean
+
 default: compile
