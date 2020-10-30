@@ -10,7 +10,7 @@ Requirements:
  * Python 3.7 or higher
  * pip3
 
-Installing the latest release
+Installing the latest release ([Release notes](https://github.com/furiosa-ai/furiosa-cli/releases))
 ```
 pip3 install --upgrade git+https://github.com/furiosa-ai/furiosa-cli.git@release-0.1.4
 ```
