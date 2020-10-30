@@ -12,7 +12,7 @@ Requirements:
 
 Installing the latest release
 ```
-pip3 install --upgrade git+https://github.com/furiosa-ai/furiosa-cli.git@release-0.1.3
+pip3 install --upgrade git+https://github.com/furiosa-ai/furiosa-cli.git@release-0.1.4
 ```
 
 Installing the development version
