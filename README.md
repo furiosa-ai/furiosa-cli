@@ -121,3 +121,5 @@ To see the estimated performance, please run `perfeye` command as following with
 $ furiosa perfeye test_data/MNISTnet_uint8_quant_without_softmax.tflite -o output.html
 output.html has been generated (elapsed: 510.783 ms)
 ```
+This command will generate './mem-report.html' file containing estimated time for executing an inference of the model. The following figure is an example of the perfeye graph.  
+![An example of the perfeye graph](images/perfeye.png)
