@@ -73,6 +73,21 @@ furiosa <command> --help
 ```
 
 ## Examples of command lines:
+### Version
+`version` command prints out the client and API server version as following:
+```sh
+$ furiosa version
+Server version: 0.1.7-dev (rev: c2d7437a5-modified built_at: 2020-12-16T00:36:25Z)
+Client version: 0.1.5-dev
+```
+### Toolchain
+`toolchain` command allows users to print out all versions of available toolchains and choose a specific toolchain.
+```sh
+furiosa toolchain list
+
+Available Toolchains:
+[0] 0.1.0 (rev: 952707e5f built_at: 2020-12-15 23:38:22)
+```
 ### Compiling tflite models
 
 `compile` command will compile your tflite model and generate an ENF file, 
