@@ -83,7 +83,7 @@ Client version: 0.1.5-dev
 ### Toolchain
 `toolchain` command allows users to print out all versions of available toolchains and choose a specific toolchain.
 ```sh
-furiosa toolchain list
+$ furiosa toolchain list
 
 Available Toolchains:
 [0] 0.1.0 (rev: 952707e5f built_at: 2020-12-15 23:38:22)
