@@ -281,12 +281,10 @@ class BuildCalibrationModel(Command):
     @staticmethod
     def build_calibration_model(session,
                                 model: bytes,
-                                input_tensors: List[str],
                                 model_path: str = None) -> bytes:
         model_path = model_path or 'model.onnx'
         multi_parts = MultipartEncoder(
             fields={
-                'input_tensors': json.dumps(input_tensors),
                 'source': (model_path, model, 'application/octet-stream')
             }
         )
@@ -299,7 +297,6 @@ class BuildCalibrationModel(Command):
 
         logging.debug("submitting the build calibration model request to {}".format(request_url))
         logging.debug("source path: {}".format(model_path))
-        logging.debug("input tensors: \n{}\n".format(input_tensors))
 
         r = requests.post(request_url,
                           data=multi_parts,
@@ -313,7 +310,6 @@ class BuildCalibrationModel(Command):
 
     def run(self) -> int:
         source_path = self.args_map['source']
-        input_tensors = self.args_map['input_tensors']
 
         if 'o' in self.args and self.args_map['o'] is not None:
             output_path = self.args_map['o']
@@ -324,7 +320,6 @@ class BuildCalibrationModel(Command):
                 open(output_path, 'wb') as output_file:
             model = BuildCalibrationModel.build_calibration_model(self.session,
                                                                   model.read(),
-                                                                  input_tensors,
                                                                   model_path=source_path)
             output_file.write(model)
 
@@ -336,13 +331,11 @@ class Quantize(Command):
     @staticmethod
     def quantize(session,
                  model: bytes,
-                 input_tensors: List[str],
                  dynamic_ranges: Dict[str, Tuple[float, float]],
                  model_path: str = None) -> bytes:
         model_path = model_path or 'model.onnx'
         multi_parts = MultipartEncoder(
             fields={
-                'input_tensors': json.dumps(input_tensors),
                 'dynamic_ranges': json.dumps(dynamic_ranges),
                 'source': (model_path, model, 'application/octet-stream')
             }
@@ -356,7 +349,6 @@ class Quantize(Command):
 
         logging.debug("submitting the quantize request to {}".format(request_url))
         logging.debug("source path: {}".format(model_path or 'model.onnx'))
-        logging.debug("input tensors: \n{}\n".format(input_tensors))
         logging.debug("dynamic ranges: \n{}\n".format(dynamic_ranges))
 
         r = requests.post(request_url,
@@ -371,7 +363,6 @@ class Quantize(Command):
 
     def run(self) -> int:
         source_path = self.args_map['source']
-        input_tensors = self.args_map['input_tensors']
         dynamic_ranges = self.args_map['dynamic_ranges']
 
         if 'o' in self.args and self.args_map['o'] is not None:
@@ -385,7 +376,6 @@ class Quantize(Command):
             dynamic_ranges = json.load(dynamic_ranges)
             model = Quantize.quantize(self.session,
                                       model.read(),
-                                      input_tensors,
                                       dynamic_ranges,
                                       model_path=source_path)
             output_file.write(model)

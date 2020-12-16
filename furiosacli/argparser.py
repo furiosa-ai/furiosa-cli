@@ -47,16 +47,12 @@ def create_argparser():
                                              help='Path to onnx file')
     build_calibration_model_cmd.add_argument('-o', type=str, default='output.onnx',
                                              help='Path to Output file (default: output.onnx)')
-    build_calibration_model_cmd.add_argument('--input-tensors', type=str, nargs='+',
-                                             help='name of input tensors')
 
     quantize_cmd = subparsers.add_parser("quantize", help='Transform a model to a quantized model.')
     quantize_cmd.add_argument('source', type=str,
                               help='Path to onnx file')
     quantize_cmd.add_argument('-o', type=str, default='output.onnx',
                               help='Path to Output file (default: output.onnx)')
-    quantize_cmd.add_argument('--input-tensors', type=str, nargs='+',
-                              help='name of input tensors')
     quantize_cmd.add_argument('--dynamic-ranges', type=str,
                               help='path of the dynamic ranges')
 
