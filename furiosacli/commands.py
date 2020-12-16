@@ -1,13 +1,12 @@
+import base64
+import json
+import logging
+import uuid
 from typing import List, Dict, Tuple
 
-import json
-import uuid
-import base64
-
 import requests
-from requests_toolbelt.multipart.encoder import MultipartEncoder
 import yaml
-import logging
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 from furiosacli import consts, __version__
 from furiosacli.exceptions import CliError, ApiError
@@ -74,7 +73,26 @@ class Version(Command):
         super().__init__(session, args, args_map)
 
     def run(self) -> int:
-        self.print_message("Version: {}".format(__version__))
+        request_url = '{}/version'.format(self.session.api_endpoint)
+        headers = {
+            consts.FURIOSA_API_VERSION_HEADER: str(2)  # version 2
+        }
+
+        r = requests.get(request_url,
+                         headers=headers,
+                         auth=ApiKeyAuth(self.session))
+
+        if r.status_code == 200:
+            content = r.json()
+            server_version = content['version']
+            server_revision = content['revision']
+            server_build_time = content['build_time']
+            print("Server version: {} (rev: {} built_at: {})"
+                  .format(server_version, server_revision, server_build_time))
+            print("Client version: {}".format(__version__))
+        else:
+            print("Client version: {}".format(__version__))
+            raise ApiError('fail to get version', r)
 
 
 class Compile(Command):
@@ -107,7 +125,7 @@ class Compile(Command):
         headers = {
             consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
             'Content-Type': multi_parts.content_type,
-            consts.FURIOSA_API_VERSION_HEADER: str(2) # version 2
+            consts.FURIOSA_API_VERSION_HEADER: str(2)  # version 2
         }
 
         logging.debug("submitting the compilation request to {}".format(request_url))
@@ -371,3 +389,33 @@ class Quantize(Command):
                                       dynamic_ranges,
                                       model_path=source_path)
             output_file.write(model)
+
+
+class ToolchainList(Command):
+    def __init__(self, session, args, args_map):
+        super().__init__(session, args, args_map)
+
+    def run(self) -> int:
+        request_url = '{}/compiler'.format(self.session.api_endpoint)
+        headers = {
+            consts.FURIOSA_API_VERSION_HEADER: str(2)  # version 2
+        }
+
+        r = requests.get(request_url,
+                         headers=headers,
+                         auth=ApiKeyAuth(self.session))
+
+        if r.status_code == 200:
+            content = r.json()
+
+            print("\nAvailable Toolchains:")
+            for idx, toolchain in enumerate(content):
+                version = toolchain['version']
+                revision = toolchain['revision']
+                build_time = toolchain['build_time']
+                print("[{}] {} (rev: {} built_at: {})".format(idx, version, revision, build_time))
+
+            print()
+        else:
+            print("Client version: {}".format(__version__))
+            raise ApiError('fail to get version', r)

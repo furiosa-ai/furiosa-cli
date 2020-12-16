@@ -59,6 +59,10 @@ def create_argparser():
                               help='name of input tensors')
     quantize_cmd.add_argument('--dynamic-ranges', type=str,
                               help='path of the dynamic ranges')
+
+    toolchain_cmd = subparsers.add_parser("toolchain", help='Compile your model and generate a binary for Furiosa NPU')
+    toolchain_subcmd = toolchain_cmd.add_subparsers(dest="subcmd")
+    toolchain_subcmd.add_parser("list", help='List all toolchains')
     return parser
 
 

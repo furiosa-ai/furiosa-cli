@@ -59,6 +59,8 @@ class CLIDriver(object):
             cmd = commands.Quantize(self.session, self.args, self.args_map)
         elif self.args.command == 'version':
             cmd = commands.Version(self.session, self.args, self.args_map)
+        elif self.args.command == 'toolchain' and self.args.subcmd == 'list':
+            cmd = commands.ToolchainList(self.session, self.args, self.args_map)
         else:
             raise CliError('Unknown command: {}'.format(self.args.command), 2)
 

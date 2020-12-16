@@ -203,3 +203,12 @@ class ParserTest(unittest.TestCase):
                                 capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assert_file_created(output_path)
+
+    def test_toolchain_list(self):
+        result = subprocess.run(['furiosa',
+                                 '-v',
+                                 'toolchain',
+                                 'list'
+                                 ],
+                                capture_output=True)
+        self.assertEqual(0, result.returncode, result.stdout)
