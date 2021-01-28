@@ -183,7 +183,6 @@ class ParserTest(unittest.TestCase):
                                  '-v',
                                  'quantize',
                                  self.test_onnx_model,
-                                 '--input-tensors', 'input',
                                  '--dynamic-ranges', self.test_dynamic_ranges,
                                  '-o', output_path,
                                  ],
@@ -197,9 +196,17 @@ class ParserTest(unittest.TestCase):
                                  '-v',
                                  'build_calibration_model',
                                  self.test_onnx_model,
-                                 '--input-tensors', 'input',
                                  '-o', output_path,
                                  ],
                                 capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assert_file_created(output_path)
+
+    def test_toolchain_list(self):
+        result = subprocess.run(['furiosa',
+                                 '-v',
+                                 'toolchain',
+                                 'list'
+                                 ],
+                                capture_output=True)
+        self.assertEqual(0, result.returncode, result.stdout)

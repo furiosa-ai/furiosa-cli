@@ -10,9 +10,9 @@ Requirements:
  * Python 3.7 or higher
  * pip3
 
-Installing the latest release
+Installing the latest release ([Release notes](https://github.com/furiosa-ai/furiosa-cli/releases))
 ```
-pip3 install --upgrade git+https://github.com/furiosa-ai/furiosa-cli.git@release-0.1.3
+pip3 install --upgrade git+https://github.com/furiosa-ai/furiosa-cli.git@release-0.1.4
 ```
 
 Installing the development version
@@ -73,6 +73,21 @@ furiosa <command> --help
 ```
 
 ## Examples of command lines:
+### Version
+`version` command prints out the client and API server version as following:
+```sh
+$ furiosa version
+Server version: 0.1.7-dev (rev: c2d7437a5-modified built_at: 2020-12-16T00:36:25Z)
+Client version: 0.1.5-dev
+```
+### Toolchain
+`toolchain` command allows users to print out all versions of available toolchains and choose a specific toolchain.
+```sh
+$ furiosa toolchain list
+
+Available Toolchains:
+[0] 0.1.0 (rev: 952707e5f built_at: 2020-12-15 23:38:22)
+```
 ### Compiling tflite models
 
 `compile` command will compile your tflite model and generate an ENF file, 
@@ -121,3 +136,5 @@ To see the estimated performance, please run `perfeye` command as following with
 $ furiosa perfeye test_data/MNISTnet_uint8_quant_without_softmax.tflite -o output.html
 output.html has been generated (elapsed: 510.783 ms)
 ```
+This command will generate './mem-report.html' file containing estimated time for executing an inference of the model. The following figure is an example of the perfeye graph.  
+![An example of the perfeye graph](images/perfeye.png)

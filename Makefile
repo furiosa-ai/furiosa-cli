@@ -1,7 +1,7 @@
 compile:
 	python ./setup.py develop
 lint:
-	pylint nux
+	pylint furiosacli
 test:
 	python -m unittest discover -v -s ./test
 clean:
