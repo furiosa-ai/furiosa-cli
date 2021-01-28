@@ -75,12 +75,9 @@ class Version(Command):
 
     def run(self) -> int:
         request_url = '{}/version'.format(self.session.api_endpoint)
-        headers = {
-            consts.FURIOSA_API_VERSION_HEADER: str(2)  # version 2
-        }
 
         r = requests.get(request_url,
-                         headers=headers,
+                         headers=http.DEFAULT_HEADERS,
                          auth=ApiKeyAuth(self.session))
 
         if r.status_code == 200:
@@ -126,7 +123,7 @@ class Compile(Command):
         headers = {
             consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
             'Content-Type': multi_parts.content_type,
-            **http.headers
+            **http.DEFAULT_HEADERS
         }
 
         logging.debug("submitting the compilation request to {}".format(request_url))
@@ -200,7 +197,7 @@ class Perf(Command):
         headers = {
             consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
             'Content-Type': multi_parts.content_type,
-            **http.headers
+            **http.DEFAULT_HEADERS
         }
 
         logging.debug("submitting the perf request to {}".format(request_url))
@@ -247,7 +244,7 @@ class Optimize(Command):
         headers = {
             consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
             'Content-Type': multi_parts.content_type,
-            **http.headers
+            **http.DEFAULT_HEADERS
         }
 
         logging.debug("submitting the build calibration model request to {}".format(request_url))
@@ -296,7 +293,7 @@ class BuildCalibrationModel(Command):
         headers = {
             consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
             'Content-Type': multi_parts.content_type,
-            **http.headers
+            **http.DEFAULT_HEADERS
         }
 
         logging.debug("submitting the build calibration model request to {}".format(request_url))
@@ -349,7 +346,7 @@ class Quantize(Command):
         headers = {
             consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
             'Content-Type': multi_parts.content_type,
-            **http.headers
+            **http.DEFAULT_HEADERS
         }
 
         logging.debug("submitting the quantize request to {}".format(request_url))
@@ -392,12 +389,8 @@ class ToolchainList(Command):
 
     def run(self) -> int:
         request_url = '{}/compiler'.format(self.session.api_endpoint)
-        headers = {
-            consts.FURIOSA_API_VERSION_HEADER: str(2)  # version 2
-        }
-
         r = requests.get(request_url,
-                         headers=headers,
+                         headers=http.DEFAULT_HEADERS,
                          auth=ApiKeyAuth(self.session))
 
         if r.status_code == 200:
