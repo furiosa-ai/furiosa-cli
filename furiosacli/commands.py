@@ -10,6 +10,7 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 from furiosacli import consts, __version__
 from furiosacli.exceptions import CliError, ApiError
+from furiosacli import http
 
 
 class ApiKeyAuth(requests.auth.AuthBase):
@@ -125,7 +126,7 @@ class Compile(Command):
         headers = {
             consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
             'Content-Type': multi_parts.content_type,
-            consts.FURIOSA_API_VERSION_HEADER: str(2)  # version 2
+            **http.headers
         }
 
         logging.debug("submitting the compilation request to {}".format(request_url))
@@ -198,7 +199,8 @@ class Perf(Command):
         request_url = '{}/{}'.format(self.session.api_endpoint, self.api_path)
         headers = {
             consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
-            'Content-Type': multi_parts.content_type
+            'Content-Type': multi_parts.content_type,
+            **http.headers
         }
 
         logging.debug("submitting the perf request to {}".format(request_url))
@@ -244,7 +246,8 @@ class Optimize(Command):
         request_url = '{}/dss/optimize'.format(session.api_endpoint)
         headers = {
             consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
-            'Content-Type': multi_parts.content_type
+            'Content-Type': multi_parts.content_type,
+            **http.headers
         }
 
         logging.debug("submitting the build calibration model request to {}".format(request_url))
@@ -292,7 +295,8 @@ class BuildCalibrationModel(Command):
         request_url = '{}/dss/build-calibration-model'.format(session.api_endpoint)
         headers = {
             consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
-            'Content-Type': multi_parts.content_type
+            'Content-Type': multi_parts.content_type,
+            **http.headers
         }
 
         logging.debug("submitting the build calibration model request to {}".format(request_url))
@@ -344,7 +348,8 @@ class Quantize(Command):
         request_url = '{}/dss/quantize'.format(session.api_endpoint)
         headers = {
             consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
-            'Content-Type': multi_parts.content_type
+            'Content-Type': multi_parts.content_type,
+            **http.headers
         }
 
         logging.debug("submitting the quantize request to {}".format(request_url))
