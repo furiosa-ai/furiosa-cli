@@ -1,0 +1,4 @@
+pyyaml
+python-dotenv
+requests-toolbelt
+git+https://github.com/furiosa-ai/furiosa-client-python@branch-0.1.0#egg=furiosa-client

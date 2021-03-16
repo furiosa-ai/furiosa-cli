@@ -8,7 +8,8 @@ setup_requires = ["setuptools"]
 install_requires = [
     "pyyaml",
     "python-dotenv",
-    "requests-toolbelt"
+    "requests-toolbelt",
+    "furiosa-client"
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))

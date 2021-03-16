@@ -7,7 +7,7 @@ from furiosacli import argparser
 from test import test_data
 
 
-class ParserTest(unittest.TestCase):
+class CommandTests(unittest.TestCase):
     mnist_model = test_data('MNISTnet_uint8_quant_without_softmax.tflite')
     test_onnx_model = test_data('test.onnx')
     test_dynamic_ranges = test_data('test_dynamic_ranges.json')
@@ -118,10 +118,10 @@ class ParserTest(unittest.TestCase):
                                  '--config', self.invalid_compiler_config,
                                  ],
                                 capture_output=True)
-        self.assertEqual(4, result.returncode)
+        self.assertTrue(result.returncode != 0)
         self.assertIn('ERROR: fail to compile', str(result.stderr))
         self.assertIn(
-            'test_data/MNISTnet_uint8_quant_without_softmax.tflite (http_status: 501, error_code: CompilationFailed, message: Currently, our compiler is not able to compile this model)',
+            "thread \'main\' panicked at \'cannot load compiler config from a file.",
             str(result.stderr))
 
     def test_perfeye(self):

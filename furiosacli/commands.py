@@ -2,15 +2,16 @@ import base64
 import json
 import logging
 import uuid
-from typing import List, Dict, Tuple
+from typing import Dict, Tuple
 
 import requests
 import yaml
+from furiosa.client import CompilerClient, CompileTask
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 from furiosacli import consts, __version__
-from furiosacli.exceptions import CliError, ApiError
 from furiosacli import http
+from furiosacli.exceptions import CliError, ApiError
 
 
 class ApiKeyAuth(requests.auth.AuthBase):
@@ -93,86 +94,66 @@ class Version(Command):
             raise ApiError('fail to get version', r)
 
 
+def read_yaml_config(path) -> str:
+    if path is not None:
+        with open(path, 'r') as yaml_file:
+            obj = yaml.safe_load(yaml_file)
+            return yaml.dump(obj)
+    else:
+        return '~'
+
+
 class Compile(Command):
     def __init__(self, session, args, args_map):
         super().__init__(session, args, args_map)
 
     def run(self) -> int:
         source_path = self.args_map['source']
-        target_npu_spec = handle_target_npu_spec(self.args)
-        compiler_config = handle_compiler_config(self.args)
+        compiler_config = read_yaml_config(self.args.config)
+        target_npu_spec = read_yaml_config(self.args.target_npu_spec)
         target_ir = handle_target_ir(self.args_map)
 
-        if 'o' in self.args and self.args_map['o'] is not None:
-            output_path = self.args_map['o']
-        else:
-            output_path = 'output.{}'.format(target_ir)
+        client = CompilerClient()
+        with open(source_path, 'rb') as file:
+            task = client.submit_compile(source=file,
+                                         compiler_config=compiler_config,
+                                         target_npu_spec=target_npu_spec)
+            task.wait_for_complete()
 
-        multi_parts = MultipartEncoder(
-            fields={
-                'target_npu_spec': target_npu_spec,
-                'compiler_config': compiler_config,
-                'target_ir': target_ir,
-                'source': (source_path, open(source_path, mode='rb'), 'application/octet-stream'),
-                'compiler_report': 'true' if self.args.compiler_report is not None else 'false',
-                'mem_alloc_report': 'true' if self.args.mem_alloc_report is not None else 'false',
-            }
-        )
+        if task.is_succeeded():
+            if 'o' in self.args and self.args_map['o'] is not None:
+                output_path = self.args_map['o']
+            else:
+                output_path = 'output.{}'.format(target_ir)
 
-        request_url = '{}/compiler'.format(self.session.api_endpoint)
-        headers = {
-            consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
-            'Content-Type': multi_parts.content_type,
-            **http.DEFAULT_HEADERS
-        }
-
-        logging.debug("submitting the compilation request to {}".format(request_url))
-        logging.debug("source path: {}".format(source_path))
-        logging.debug("output path: {}".format(output_path))
-        logging.debug("target ir: {}".format(target_ir))
-        logging.debug("target npu spec: \n{}\n".format(pretty_yaml(target_npu_spec)))
-        logging.debug("compiler config: \n{}\n".format(pretty_yaml(compiler_config)))
-
-        r = requests.post(request_url,
-                          data=multi_parts,
-                          headers=headers,
-                          auth=ApiKeyAuth(self.session))
-
-        if r.status_code == 200:
-            content = r.json()
             with open(output_path, 'wb') as output_file:
-                binary = content['binary']
-                decoded_binary = base64.decodebytes(bytes(binary, 'utf-8'))
-                output_file.write(decoded_binary)
-
-                ms_elapsed = r.elapsed.microseconds / 1000
+                output_file.write(task.get_ir())
+                ms_elapsed = 100
                 self.print_message('{} has been generated (elapsed: {} ms)'.format(output_path, ms_elapsed))
 
             if self.args.compiler_report is not None:
                 compiler_report_path = self.args.compiler_report
                 with open(compiler_report_path, 'w') as compiler_report_file:
-                    compiler_report = content['compiler_report']
-                    decoded_compiler_report = base64.standard_b64decode(compiler_report)
-                    compiler_report_file.write(bytes.decode(decoded_compiler_report))
+                    compiler_report = task.get_compiler_report()
+                    compiler_report_file.write(compiler_report)
                     self.print_message('the compiler report has been written to {}'
                                        .format(compiler_report_path))
 
             if self.args.mem_alloc_report is not None:
                 mem_alloc_report_path = self.args.mem_alloc_report
                 with open(self.args.mem_alloc_report, 'w') as mem_alloc_report_file:
-                    mem_alloc_report = content['mem_alloc_report']
-                    decoded_mem_alloc_report = base64.standard_b64decode(mem_alloc_report)
-                    mem_alloc_report_file.write(bytes.decode(decoded_mem_alloc_report))
+                    mem_alloc_report = task.get_memory_alloc_report()
+                    mem_alloc_report_file.write(mem_alloc_report)
                     self.print_message('the memory allocation report has been written to {}'
                                        .format(mem_alloc_report_path))
         else:
-            raise ApiError('fail to compile {}'.format(source_path), r)
+            raise CliError('fail to compile {}: \n{}'.format(source_path, task.get_error_message()))
 
 
 class Perf(Command):
     def __init__(self, session, args, args_map, api_path='perf', content_type='csv'):
         super().__init__(session, args, args_map)
-        self.api_path = api_path
+        self.api_path = "api/v1/" + api_path
         self.content_type = content_type
 
     def run(self) -> int:
@@ -240,7 +221,7 @@ class Optimize(Command):
             }
         )
 
-        request_url = '{}/dss/optimize'.format(session.api_endpoint)
+        request_url = '{}/api/v1/dss/optimize'.format(session.api_endpoint)
         headers = {
             consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
             'Content-Type': multi_parts.content_type,
@@ -289,7 +270,7 @@ class BuildCalibrationModel(Command):
             }
         )
 
-        request_url = '{}/dss/build-calibration-model'.format(session.api_endpoint)
+        request_url = '{}/api/v1/dss/build-calibration-model'.format(session.api_endpoint)
         headers = {
             consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
             'Content-Type': multi_parts.content_type,
@@ -342,7 +323,7 @@ class Quantize(Command):
             }
         )
 
-        request_url = '{}/dss/quantize'.format(session.api_endpoint)
+        request_url = '{}/api/v1/dss/quantize'.format(session.api_endpoint)
         headers = {
             consts.REQUEST_ID_HTTP_HEADER: str(uuid.uuid4()),
             'Content-Type': multi_parts.content_type,
@@ -388,7 +369,7 @@ class ToolchainList(Command):
         super().__init__(session, args, args_map)
 
     def run(self) -> int:
-        request_url = '{}/compiler'.format(self.session.api_endpoint)
+        request_url = '{}/api/v1/compiler'.format(self.session.api_endpoint)
         r = requests.get(request_url,
                          headers=http.DEFAULT_HEADERS,
                          auth=ApiKeyAuth(self.session))

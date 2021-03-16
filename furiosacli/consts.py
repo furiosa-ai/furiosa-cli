@@ -1,7 +1,6 @@
 # End points
-PRODUCTION_API_ENDPOINT='https://api.furiosa.ai/api/v1'
-SANDBOX_API_ENDPOINT='http://internal-furiosa-api-backend-dev-887583302.ap-northeast-2.elb.amazonaws.com:8080/api/v1'
-LOCALHOST_API_ENDPOINT='http://localhost:8080/api/v1'
+PRODUCTION_API_ENDPOINT='https://api.furiosa.ai'
+LOCALHOST_API_ENDPOINT='http://localhost:8080'
 DEFAULT_API_ENDPOINT=PRODUCTION_API_ENDPOINT
 
 
